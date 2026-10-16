@@ -1,0 +1,14 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      apifyToken:
+        type: string
+        description: Your Apify API token (https://console.apify.com/settings/integrations). Tool calls run the hosted Actor and are billed pay-per-event on Apify.
+  commandFunction: |-
+    (config) => ({
+      command: 'python',
+      args: ['mcp_server.py'],
+      env: { APIFY_TOKEN: config.apifyToken || '' }
+    })

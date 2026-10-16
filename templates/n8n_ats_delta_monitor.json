@@ -1,0 +1,169 @@
+{
+  "name": "ATS Job Delta Monitor - Workday, Greenhouse, Lever, Ashby",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "id": "11111111-0000-0000-0000-000000000001",
+      "name": "Schedule Trigger (Every 12h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/ginugokz~ats-zero-browser-gateway/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.APIFY_API_TOKEN || 'YOUR_APIFY_API_TOKEN_HERE' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"target\": \"https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite\",\n  \"only_deltas\": true,\n  \"include_details\": true,\n  \"max_jobs\": 50\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "22222222-0000-0000-0000-000000000002",
+      "name": "Apify ATS Protocol Gateway (Run & Get Deltas)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.delta_status }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "ADDED",
+              "outputKey": "New Jobs (ADDED)"
+            },
+            {
+              "value2": "REMOVED",
+              "outputKey": "Closed Jobs (REMOVED)"
+            },
+            {
+              "value2": "UPDATED",
+              "outputKey": "Edited Jobs (UPDATED)"
+            }
+          ]
+        }
+      },
+      "id": "33333333-0000-0000-0000-000000000003",
+      "name": "Route by Delta Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "alert_type",
+              "value": "🚨 NEW JOB POSTED"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $json.title }} at {{ $json.company_tenant }} ({{ $json.source_system }}) - Salary: {{ $json.compensation_raw || 'Not specified' }} - Link: {{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "44444444-0000-0000-0000-000000000004",
+      "name": "Format New Job Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "alert_type",
+              "value": "🛑 JOB CLOSED"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $json.title }} (Requisition: {{ $json.requisition_id }}) has been closed/removed from {{ $json.company_tenant }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55555555-0000-0000-0000-000000000005",
+      "name": "Format Closed Job Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (Every 12h)": {
+      "main": [
+        [
+          {
+            "node": "Apify ATS Protocol Gateway (Run & Get Deltas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify ATS Protocol Gateway (Run & Get Deltas)": {
+      "main": [
+        [
+          {
+            "node": "Route by Delta Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Delta Status": {
+      "main": [
+        [
+          {
+            "node": "Format New Job Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Closed Job Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
