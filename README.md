@@ -92,7 +92,7 @@ The server starts without a token; the token is only needed when the tool is cal
 
 ### 5. n8n
 
-Import [`templates/n8n_ats_delta_monitor.json`](templates/n8n_ats_delta_monitor.json): it runs every 12 hours, calls the Actor with `only_deltas`, and routes new and closed jobs to separate branches (Slack, email, Sheets…). Set `APIFY_API_TOKEN` in your n8n environment.
+Import [`templates/n8n_ats_delta_monitor.json`](templates/n8n_ats_delta_monitor.json): it runs every 12 hours, calls the Actor with `only_deltas` and `full_scan`, and routes new, closed and edited jobs to three outputs (connect them to Slack, email or Sheets). Authentication: create a **Header Auth** credential with Name `Authorization` and Value `Bearer <your Apify API token>`, then select it in the HTTP Request node.
 
 ## Output
 
@@ -121,10 +121,10 @@ One item per job. Example:
 |---|---|
 | `ADDED` | New job since the previous run |
 | `UPDATED` | Title, description or compensation changed |
-| `REMOVED` | Job no longer listed (confirmed on two consecutive runs) |
+| `REMOVED` | Job no longer listed (reported only after a complete, consistent read; a sudden drop to zero jobs waits for a second run) |
 | `EXISTING` | Unchanged — skipped when `only_deltas` is `true` |
 
-The tracking state is stored in a named key-value store in **your own** Apify account.
+The tracking state is stored in a named key-value store in **your own** Apify account. To track closed jobs on large career sites, set `full_scan: true` (summary mode, up to 5,000 jobs per site); a partial read never reports `REMOVED`.
 
 ## Pricing
 
