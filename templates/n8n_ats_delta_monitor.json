@@ -3,6 +3,18 @@
   "nodes": [
     {
       "parameters": {
+        "content": "## ATS job delta monitor\n\n1. Create a **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_APIFY_TOKEN` (token at console.apify.com/settings/integrations).\n2. Select it in **Run Actor (changes only)**.\n3. Edit `targets` in the request body: Workday, Greenhouse, Lever or Ashby career-site URLs.\n4. Connect the three outputs to Slack, email or Google Sheets.\n\nThe first run returns every current job as ADDED; later runs return only new, edited and closed jobs. Billing is pay-per-event on Apify (see the Actor's Pricing tab).",
+        "height": 340,
+        "width": 420
+      },
+      "id": "6f1d2a10-0000-4000-8000-000000000001",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
@@ -12,149 +24,217 @@
           ]
         }
       },
-      "id": "11111111-0000-0000-0000-000000000001",
-      "name": "Schedule Trigger (Every 12h)",
+      "id": "6f1d2a10-0000-4000-8000-000000000002",
+      "name": "Every 12 hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [480, 380]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.apify.com/v2/acts/ginugokz~ats-zero-browser-gateway/run-sync-get-dataset-items",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.APIFY_API_TOKEN || 'YOUR_APIFY_API_TOKEN_HERE' }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"target\": \"https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite\",\n  \"only_deltas\": true,\n  \"include_details\": true,\n  \"max_jobs\": 50\n}",
+        "jsonBody": "{\n  \"targets\": [\n    \"https://jobs.ashbyhq.com/linear\",\n    \"https://jobs.ashbyhq.com/ramp\"\n  ],\n  \"only_deltas\": true,\n  \"full_scan\": true,\n  \"include_details\": false\n}",
         "options": {
-          "timeout": 120000
+          "timeout": 320000
         }
       },
-      "id": "22222222-0000-0000-0000-000000000002",
-      "name": "Apify ATS Protocol Gateway (Run & Get Deltas)",
+      "id": "6f1d2a10-0000-4000-8000-000000000003",
+      "name": "Run Actor (changes only)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 300]
+      "position": [720, 380]
     },
     {
       "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.delta_status }}",
         "rules": {
-          "rules": [
+          "values": [
             {
-              "value2": "ADDED",
-              "outputKey": "New Jobs (ADDED)"
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "6f1d2a10-0000-4000-8000-0000000000a1",
+                    "leftValue": "={{ $json.delta_status }}",
+                    "rightValue": "ADDED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New jobs"
             },
             {
-              "value2": "REMOVED",
-              "outputKey": "Closed Jobs (REMOVED)"
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "6f1d2a10-0000-4000-8000-0000000000a2",
+                    "leftValue": "={{ $json.delta_status }}",
+                    "rightValue": "REMOVED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Closed jobs"
             },
             {
-              "value2": "UPDATED",
-              "outputKey": "Edited Jobs (UPDATED)"
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "6f1d2a10-0000-4000-8000-0000000000a3",
+                    "leftValue": "={{ $json.delta_status }}",
+                    "rightValue": "UPDATED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Edited jobs"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "33333333-0000-0000-0000-000000000003",
-      "name": "Route by Delta Status",
+      "id": "6f1d2a10-0000-4000-8000-000000000004",
+      "name": "Route by change",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [720, 300]
+      "position": [960, 380]
     },
     {
       "parameters": {
-        "values": {
-          "string": [
+        "assignments": {
+          "assignments": [
             {
-              "name": "alert_type",
-              "value": "🚨 NEW JOB POSTED"
-            },
-            {
-              "name": "summary",
-              "value": "={{ $json.title }} at {{ $json.company_tenant }} ({{ $json.source_system }}) - Salary: {{ $json.compensation_raw || 'Not specified' }} - Link: {{ $json.url }}"
+              "id": "6f1d2a10-0000-4000-8000-0000000000b1",
+              "name": "alert",
+              "value": "=New job: {{ $json.title }} at {{ $json.company_tenant }} ({{ $json.source_system }}). Salary: {{ $json.compensation_raw || 'not published' }}. {{ $json.url }}",
+              "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "44444444-0000-0000-0000-000000000004",
-      "name": "Format New Job Alert",
+      "id": "6f1d2a10-0000-4000-8000-000000000005",
+      "name": "Format new job",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [960, 200]
+      "position": [1220, 220]
     },
     {
       "parameters": {
-        "values": {
-          "string": [
+        "assignments": {
+          "assignments": [
             {
-              "name": "alert_type",
-              "value": "🛑 JOB CLOSED"
-            },
-            {
-              "name": "summary",
-              "value": "={{ $json.title }} (Requisition: {{ $json.requisition_id }}) has been closed/removed from {{ $json.company_tenant }}."
+              "id": "6f1d2a10-0000-4000-8000-0000000000b2",
+              "name": "alert",
+              "value": "=Closed: {{ $json.title }} at {{ $json.company_tenant }} (requisition {{ $json.requisition_id }}).",
+              "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "55555555-0000-0000-0000-000000000005",
-      "name": "Format Closed Job Alert",
+      "id": "6f1d2a10-0000-4000-8000-000000000006",
+      "name": "Format closed job",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [960, 400]
+      "position": [1220, 380]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f1d2a10-0000-4000-8000-0000000000b3",
+              "name": "alert",
+              "value": "=Edited: {{ $json.title }} at {{ $json.company_tenant }}. {{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6f1d2a10-0000-4000-8000-000000000007",
+      "name": "Format edited job",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1220, 540]
     }
   ],
   "connections": {
-    "Schedule Trigger (Every 12h)": {
+    "Every 12 hours": {
       "main": [
         [
           {
-            "node": "Apify ATS Protocol Gateway (Run & Get Deltas)",
+            "node": "Run Actor (changes only)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Apify ATS Protocol Gateway (Run & Get Deltas)": {
+    "Run Actor (changes only)": {
       "main": [
         [
           {
-            "node": "Route by Delta Status",
+            "node": "Route by change",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Route by Delta Status": {
+    "Route by change": {
       "main": [
         [
           {
-            "node": "Format New Job Alert",
+            "node": "Format new job",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Format Closed Job Alert",
+            "node": "Format closed job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format edited job",
             "type": "main",
             "index": 0
           }
@@ -165,5 +245,6 @@
   "active": false,
   "settings": {
     "executionOrder": "v1"
-  }
+  },
+  "pinData": {}
 }
