@@ -18,12 +18,14 @@ This repository contains the **MCP server** and **integration templates**. The e
 
 ## Supported career sites
 
-| ATS | Example input |
-|---|---|
-| Workday | `https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite` |
-| Greenhouse | `https://boards.greenhouse.io/stripe` or `stripe` |
-| Lever | `https://jobs.lever.co/spotify` or `spotify` |
-| Ashby | `https://jobs.ashbyhq.com/ramp` or `ramp` |
+| ATS | URL format | Example input |
+|---|---|---|
+| Workday | `https://{company}.wd{n}.myworkdayjobs.com/{locale}/{site}` or `https://wd{n}.myworkdaysite.com/recruiting/{company}/{site}` | `https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite` |
+| Greenhouse | `https://boards.greenhouse.io/{board}` or `https://job-boards.greenhouse.io/{board}` | `https://boards.greenhouse.io/stripe` |
+| Lever | `https://jobs.lever.co/{company}` | `https://jobs.lever.co/spotify` |
+| Ashby | `https://jobs.ashbyhq.com/{company}` | `https://jobs.ashbyhq.com/ramp` |
+
+Pass full career-site URLs: the ATS is detected from the host. To find one, open the company's careers page, click any job and copy the address up to the board or site name.
 
 ## Quick start
 
@@ -96,24 +98,30 @@ Import [`templates/n8n_ats_delta_monitor.json`](templates/n8n_ats_delta_monitor.
 
 ## Output
 
-One item per job. Example:
+One item per job. Real item from a run on 16 October 2026; `locations` (13 entries) and `description_html` are shortened here:
 
 ```json
 {
-  "source_system": "workday",
+  "source_system": "workday_cxs",
   "company_tenant": "nvidia",
-  "requisition_id": "JR1987654",
-  "title": "Senior Deep Learning Architect",
-  "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/JR1987654",
-  "locations": ["Santa Clara, CA", "Remote - US"],
-  "posted_date": "2026-10-14",
+  "site_id": "NVIDIAExternalCareerSite",
+  "requisition_id": "JR1999579",
+  "title": "Senior HPC Architect, Automation and At-Scale Deployment",
+  "url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-HPC-Architect_JR1999579",
+  "locations": ["US, CA, Santa Clara", "US, TX, Remote", "US, CO, Remote"],
+  "posted_date": "2026-10-15",
   "employment_type": "Full time",
-  "remote_type": "Hybrid",
-  "compensation_raw": "$220,000 - $340,000 USD Annual",
+  "remote_type": null,
+  "compensation_raw": "184,000 USD - 287,500 USD",
+  "description_html": "<p>NVIDIA has continuously reinvented itself over two decades. …</p>",
   "delta_status": "ADDED",
-  "scraped_at": "2026-10-15T19:47:48Z"
+  "summary_hash": "ec90f0b7cd647ca6",
+  "detail_hash": "2f3177f5f974d75c",
+  "scraped_at": "2026-10-16T04:50:18.026337+00:00"
 }
 ```
+
+`source_system` is `workday_cxs`, `greenhouse`, `lever` or `ashby`. `compensation_raw` is filled only when the posting publishes a salary.
 
 ## How change tracking works
 

@@ -82,7 +82,9 @@ def scrape_ats_jobs(
     """Extract open job postings from Workday, Greenhouse, Lever and Ashby career sites.
 
     Args:
-        urls: Career-site URLs or board tokens, for example
+        urls: Full career-site URLs; the ATS is detected from the host
+            (myworkdayjobs.com, myworkdaysite.com, greenhouse.io, lever.co,
+            ashbyhq.com). Bare board names such as "stripe" are rejected. Examples:
             "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite",
             "https://boards.greenhouse.io/stripe", "https://jobs.lever.co/spotify",
             "https://jobs.ashbyhq.com/ramp".
@@ -92,7 +94,8 @@ def scrape_ats_jobs(
         include_details: Include full job descriptions and salary extraction.
 
     Returns a dict with ``count`` and ``jobs`` (title, url, locations, posted_date,
-    employment_type, remote_type, compensation_raw, delta_status, ...).
+    employment_type, remote_type, compensation_raw, description_html, delta_status,
+    source_system: workday_cxs | greenhouse | lever | ashby, ...).
     Billing: pay-per-event on Apify; see the Actor's Pricing tab.
     """
     targets = [u.strip() for u in urls if isinstance(u, str) and u.strip()]
