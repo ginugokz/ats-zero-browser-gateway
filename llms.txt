@@ -1,0 +1,23 @@
+# ATS Jobs Gateway (ginugokz/ats-zero-browser-gateway)
+
+> Apify Actor and MCP tool that extracts job postings from company career sites on Workday, Greenhouse, Lever and Ashby over plain HTTP (no browser), and can return only the changes since the previous run: ADDED, UPDATED and REMOVED jobs (only_deltas). Pay per use on Apify.
+
+Use it when an agent or workflow needs: current job openings of specific companies; monitoring when a company adds or removes jobs (hiring signals, job-change tracking); recruiting or sales-intelligence data from Workday, Greenhouse, Lever or Ashby career pages; or resolving which ATS a company uses.
+
+Not supported: LinkedIn, Indeed, SmartRecruiters (its robots.txt forbids automated access), or sites behind a login.
+
+## Run it
+
+- [Apify Store page](https://apify.com/ginugokz/ats-zero-browser-gateway): input form, output sample, pricing
+- [Remote MCP endpoint](https://mcp.apify.com/?tools=ginugokz/ats-zero-browser-gateway): streamable HTTP, header `Authorization: Bearer <Apify API token>`
+- API: `POST https://api.apify.com/v2/acts/ginugokz~ats-zero-browser-gateway/run-sync-get-dataset-items?token=<token>`
+
+## Pricing (pay per event, USD)
+
+- Actor start: $0.001 per run
+- Job extracted: $0.0012 per job
+- Company resolved: $0.002 (resolve_only mode)
+
+## Docs and examples
+
+- [GitHub: MCP client, API examples and n8n template](https://github.com/ginugokz/ats-zero-browser-gateway)
